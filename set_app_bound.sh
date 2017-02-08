@@ -10,11 +10,32 @@ if [[ $# -lt 2 ]]; then
 fi
 
 app="$1"
+case $app in
+    c)
+    app="chrome"
+    ;;
+
+    s)
+    app="safari"
+    ;;
+
+    p)
+    app="preview"
+    ;;
+
+    f)
+    app="finder"
+    ;;
+
+    t)
+    app="terminal"
+    ;;
+esac
 
 if [[ $# -eq 2 ]]; then
     bound_descr="$2"
     case $bound_descr in
-        m2-full)
+        m2-full|m2|2f|2)
         bound="{1440, 23, 2520, 1920}"
         ;;
 
@@ -34,31 +55,31 @@ if [[ $# -eq 2 ]]; then
         bound="{1440, 23, 2520, 683}"
         ;;
 
-        m2-top-2-3|m2-top)
+        m2-top-2-3|m2-top|2t)
         bound="{1440, 23, 2520, 1245}"
         ;;
 
-        m2-bottom-1-3|m2-bottom)
+        m2-bottom-1-3|m2-bottom|2b)
         bound="{1440, 1250, 2520, 1920}"
         ;;
 
-        full)
+        full|f|1f|1)
         bound="{41, 23, 1437, 900}"
         ;;
 
-        left-1-2|left-half)
+        left-1-2|left-half|lh)
         bound="{41, 23, 733, 900}"
         ;;
 
-        right-1-2|right-half|half)
+        right-1-2|right-half|half|rh|h)
         bound="{736, 23, 1439, 900}"
         ;;
 
-        right-2-3|right)
+        right-2-3|right|r)
         bound="{470, 23, 1439, 900}"
         ;;
 
-        left-2-3|left)
+        left-2-3|left|l)
         bound="{41, 23, 1000, 900}"
         ;;
 
