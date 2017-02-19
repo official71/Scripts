@@ -36,20 +36,3 @@ for link in all_links:
         print 'Downloading file :' + pdf_url + '  ... ',
         urllib.urlretrieve(pdf_url, fname)
         print 'Done'
-
-        # hx = url.split('name=')[1].replace('%', '')
-        # uch = bytearray.fromhex(hx).decode('utf-8')
-        # print uch + ',' ,
-
-        # # go deeper extract the evaluation
-        # try:
-        #     pg = urllib2.urlopen('http://www.ximizi.com/' + url)
-        # except:
-        #     print('N/A')
-
-        # sp = BeautifulSoup(pg, 'lxml')
-        # al = sp.find_all("font", color="#009900")
-        # if not al:
-        #     print('N/A')
-        # for l in al:
-        #     print l.text
