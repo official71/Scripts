@@ -9,14 +9,15 @@ from sky_epl import sky_epl
 from sky_fa import sky_fa
 from sky_ucl import sky_ucl
 import smtplib
-from email.mime.text import MIMEText as MT
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from secrets import GMAIL_USER, GMAIL_PASSWD, FROM, TO
 
 # Favorite teams (in lower case)
 MY_TEAMS = ['arsenal']
 WATCH_TEAMS = ['arsenal', 'chelsea', 'manchester city', 'manchester united', 'liverpool', 'tottenham hotspur']
 
-def send_email(body):
+def send_email(html):
     user = GMAIL_USER
     passwd = GMAIL_PASSWD
     addr_from = FROM
@@ -31,15 +32,26 @@ def send_email(body):
     else:
         subject += 'th'
 
-    msg = """From: %s\nTo: %s\nSubject: %s\n\n%s""" % (addr_from, ', '.join(addr_to), subject, body)
+    # msg = """From: %s\nTo: %s\nSubject: %s\n\n%s""" % (addr_from, ', '.join(addr_to), subject, body)
     # print msg
+    msg = MIMEMultipart()
+    msg['Subject'] = subject
+    msg['From'] = addr_from
+    msg['To'] = ', '.join(addr_to)
+
+    text = "Hi,\n\nHere are the fixtures you ordered. Have a wonderful day!\n\n\n"
+
+    part1 = MIMEText(text, 'plain')
+    part2 = MIMEText(html, 'html')
+    msg.attach(part1)
+    msg.attach(part2)
 
     try:
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.ehlo()
         server.starttls()
         server.login(user, passwd)
-        server.sendmail(addr_from, addr_to, msg)
+        server.sendmail(addr_from, addr_to, msg.as_string())
         server.close()
         print 'successfully sent the email'
     except:
@@ -69,6 +81,66 @@ def print_match(match, body):
     body += '\n%7s%-12s%-25s  VS      %-25s%-10s%-10s' % (star, info, match['home'], match['away'], match['league'], match['tv'])
     return body
 
+def print_match_html(match, html):
+    # first column hour/result/info?
+    info = match['hour']
+    if info == 'N/A':
+        info = match['result']
+        if info == 'N/A':
+            info = match['info']
+
+    # check fav teams
+    home = match['home'].lower()
+    away = match['away'].lower()
+    if home in MY_TEAMS or away in MY_TEAMS:
+        star = """&#9734;&#9734;&#9734;"""
+    elif home in WATCH_TEAMS and away in WATCH_TEAMS:
+        star = """&#9734;&#9734;"""
+    elif home in WATCH_TEAMS or away in WATCH_TEAMS:
+        star = """&#9734;"""
+    else:
+        star = ' '
+
+    # team display style
+    if home in MY_TEAMS:
+        home_style = """;font-weight:bold;color:orangered;font-size:110%%"""
+    elif home in WATCH_TEAMS:
+        home_style = """;font-weight:bold"""
+    else:
+        home_style = ''
+
+    if away in MY_TEAMS:
+        away_style = """;font-weight:bold;color:orangered;font-size:110%%"""
+    elif away in WATCH_TEAMS:
+        away_style = """;font-weight:bold"""
+    else:
+        away_style = ''    
+
+    # background colors
+    if match['league'] == 'EPL':
+        bg_color = 'powderblue'
+    elif match['league'] == 'FA CUP':
+        bg_color = 'lemonchiffon'
+    elif match['league'] == 'UEFA CL':
+        bg_color = 'lightpink'
+    elif match['league'] == 'Cap1 CUP':
+        bg_color = 'lavender'
+    else:
+        bg_color = 'gainsboro'
+
+    html += """
+    <tr style="background-color:%s;">
+        <td style="width:10%%; text-align:right">%s</td>
+        <td style="width:14%%">%s</td>
+        <td style="width:28%%%s">%s</td>
+        <td style="width:28%%%s">%s</td>
+        <td style="width:8%%">%s</td>
+        <td style="width:12%%">%s</td>
+    </tr>
+    """ % (bg_color, star, info, home_style, match['home'], away_style, match['away'], match['league'], match['tv'])
+
+    return html
+
 
 
 """
@@ -78,7 +150,30 @@ Retrieve fixtures from websites:
    <m> is the month interested in
 """
 def get_fixtures():
-    body = ""
+    plain = ""
+    html = """\
+    <html>
+    <head>
+        <style>
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 5px;
+            text-align: left;
+        }
+        </style>
+    </head>
+    <body>
+    """
+    html_end = """\
+    </body>
+    </html>
+    """
+
+    # anything to send?
+    need_send_email = False
 
     # URL
     url_nbc_epl_base = "http://scores.nbcsports.msnbc.com/epl/fixtures.asp?month="
@@ -124,36 +219,54 @@ def get_fixtures():
     date = day0
     del_1 = timedelta(1)
     while date != dayX:
-        matches = ""
+        matches_plain = ""
+        matches_html_tr = ""
+        need_send_email = False
+
         key = datetime.strftime(date, '%m%d%y')
 
         # EPL
         for match in dd_epl[key]:
-            matches = print_match(match, matches)
+            need_send_email = True
+            matches_plain = print_match(match, matches_plain)
+            matches_html_tr = print_match_html(match, matches_html_tr)
 
         # FA
         for match in dd_fa[key]:
-            matches = print_match(match, matches)
+            need_send_email = True
+            matches_plain = print_match(match, matches_plain)
+            matches_html_tr = print_match_html(match, matches_html_tr)
 
         # UCL
         for match in dd_ucl[key]:
-            matches = print_match(match, matches)
+            need_send_email = True
+            matches_plain = print_match(match, matches_plain)
+            matches_html_tr = print_match_html(match, matches_html_tr)
 
-        if matches:
+        if need_send_email:
+            date_str = datetime.strftime(date, '%a, %d %B %Y')
             if date == today:
-                body += '\n\n>-----   ' + datetime.strftime(date, '%a, %d %B %Y') + '   -----< \n'
+                plain += '\n\n>-----   ' + date_str + '   -----< \n'
+                date_html = """<h3 style="color:forestgreen;">%s</h3>""" % date_str
             else:
-                body += '\n\n' + datetime.strftime(date, '%a, %d %B %Y') + '\n'
-            body += matches
+                plain += '\n\n' + date_str + '\n'
+                date_html = """<h3>%s</h3>""" % date_str
+            
+            plain += matches_plain
+            html += """\
+            %s
+            <table style="width: 100%%">%s</table>
+            """ % (date_html, matches_html_tr)
+
         # next day
         date += del_1
 
-    return body
+    return plain, html + html_end
 
 def main():
-    body = get_fixtures()
-    if body:
-        send_email(body)
+    plain, html = get_fixtures()
+    if plain:
+        send_email(html)
     else:
         print 'empty fixtures, no need to sent email'
 
