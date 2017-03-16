@@ -17,6 +17,12 @@ from secrets import GMAIL_USER, GMAIL_PASSWD, FROM, TO
 MY_TEAMS = ['arsenal']
 WATCH_TEAMS = ['arsenal', 'chelsea', 'manchester city', 'manchester united', 'liverpool', 'tottenham hotspur']
 
+# number of days before and after today
+# e.g. if (0, 1), then only today's fixture;
+# if (-3, 8), then fixtures from -3 to +7 days
+NR_DAYS_BACKWARD = 0
+NR_DAYS_FORWARD = 2
+
 def send_email(html):
     user = GMAIL_USER
     passwd = GMAIL_PASSWD
@@ -55,7 +61,7 @@ def send_email(html):
         server.close()
         print 'successfully sent the email'
     except:
-        print 'failed to sent email'
+        print 'failed to send email'
 
 
 def print_match(match, body):
@@ -194,9 +200,9 @@ def get_fixtures():
     dd_ucl = defaultdict(list)
 
     today = datetime.today()
-    del_backward = timedelta(0)
+    del_backward = timedelta(NR_DAYS_BACKWARD)
     day0 = today + del_backward # from ... days ago
-    del_forward = timedelta(14)
+    del_forward = timedelta(NR_DAYS_FORWARD)
     dayX = today + del_forward # to ... days later
     month_begin = day0.month
     month_end = dayX.month
@@ -268,6 +274,6 @@ def main():
     if plain:
         send_email(html)
     else:
-        print 'empty fixtures, no need to sent email'
+        print 'empty fixtures, no need to send email'
 
 if __name__ == "__main__": main()
