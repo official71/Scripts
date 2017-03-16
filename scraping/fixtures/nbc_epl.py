@@ -68,7 +68,7 @@ def nbc_epl(url_epl, dd_epl):
             elif td_info_span:
                 try:
                     hr = datetime.strptime(td_info_span.text,'%I:%M %p ET')
-                    dd['hour'] = datetime.strftime(hr, '%H:%M')
+                    dd['hour'] = datetime.strftime(hr, '%H:%M EST')
                 except:
                     dd['hour'] = td_info_span.text
             else:
