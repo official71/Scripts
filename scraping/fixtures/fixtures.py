@@ -7,27 +7,36 @@ from datetime import datetime, timedelta
 from nbc_epl import nbc_epl
 from sky_epl import sky_epl
 from sky_fa import sky_fa
+from sky_ucl import sky_ucl
 
 # Favorite teams (in lower case)
-fav_teams = ['arsenal']
+MY_TEAMS = ['arsenal']
+WATCH_TEAMS = ['arsenal', 'chelsea', 'manchester city', 'manchester united', 'liverpool', 'tottenham hotspur']
 
-def output(star, info, home, away, tv, league):
-    if star:
-        s = ' * '
-    else:
-        s = '   '
-    print '%3s%-12s%-25s  VS      %-25s%-10s%-10s' % (s, info, home, away, league, tv)
 
 def print_match(match):
     # first column hour/result/info?
-    s = match['hour']
-    if s == 'N/A':
-        s = match['result']
-        if s == 'N/A':
-            s = match['info']
+    info = match['hour']
+    if info == 'N/A':
+        info = match['result']
+        if info == 'N/A':
+            info = match['info']
+
     # check fav teams
-    fav = match['home'].lower() in fav_teams or match['away'].lower() in fav_teams
-    output(fav, s, match['home'], match['away'], match['tv'], match['league'])
+    home = match['home'].lower()
+    away = match['away'].lower()
+    if home in MY_TEAMS or away in MY_TEAMS:
+        star = '$$$ '
+    elif home in WATCH_TEAMS and away in WATCH_TEAMS:
+        star = ' $$ '
+    elif home in WATCH_TEAMS or away in WATCH_TEAMS:
+        star = '  $ '
+    else:
+        star = '    '
+
+    print '%7s%-12s%-25s  VS      %-25s%-10s%-10s' % (star, info, match['home'], match['away'], match['league'], match['tv'])
+
+
 
 """
 Retrieve fixtures from websites:
@@ -51,14 +60,15 @@ def main():
     url_sky_fa = "http://www.skysports.com/fa-cup-fixtures"
     fa_in_use = "sky"
 
-    # url_sky_ucl = "http://www.skysports.com/champions-league-fixtures"
-    # ucl_in_use = "sky"
+    url_sky_ucl = "http://www.skysports.com/champions-league-fixtures"
+    ucl_in_use = "sky"
 
     # data for EPL/FA
     # key: date
     # data: list of dict(hour/result/info, home, away, tv)
     dd_epl = defaultdict(list)
     dd_fa = defaultdict(list)
+    dd_ucl = defaultdict(list)
 
     today = datetime.today()
     del_backward = timedelta(-3)
@@ -79,6 +89,9 @@ def main():
     if fa_in_use == "sky":
         sky_fa(url_sky_fa, dd_fa)
 
+    if ucl_in_use == "sky":
+        sky_ucl(url_sky_ucl, dd_ucl)
+
     # show results
     print "\n------------------------------------------ FIXTURES ---------------------------------------------\n"
     date = day0
@@ -97,6 +110,10 @@ def main():
 
         # FA
         for match in dd_fa[key]:
+            print_match(match)
+
+        # UCL
+        for match in dd_ucl[key]:
             print_match(match)
 
         date += del_1
